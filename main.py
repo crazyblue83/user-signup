@@ -1,81 +1,68 @@
+#!/usr/bin/env python
+
+__author__ = "student"
+__version__ = "1.0"
+# June 2017
+# Flask User Sign-up re: LaunchCode
+# Rubric: http://education.launchcode.org/web-fundamentals/assignments/user-signup/
+
+
 from flask import Flask, request, redirect, render_template
+import re
 
 app = Flask(__name__)
 app.config['DEBUG'] = True
 
-@app.route("/")
+
+@app.route("/", methods=["POST", "GET"])
 def index():
-    return render_template('signup_form.html')
 
-@app.route("/validate-signup", methods=["POST"])
-def validate_signup():
-    return render_template('signup_form.html')    
-
-    username = request.form['username']
-    password = request.form['password']
-    verify = request.form['verify']
-    email = request.form['email']
-
+    username = ''
+    email = ''
     username_error = ''
     password_error = ''
-    verify_error = ''
+    verify_password_error = ''
     email_error = ''
-    
-    if not username:
-        username_error = "That's not a valid username."
-    
-    if len(username) <= 3 or len(username) > 20:
-        username_error = "That's not a valid username"
-        username = ''
-    else:
-        username = str(username)
-        if " " in username:
+    title = 'Login'
+
+    if request.method == "POST":
+
+        username = request.form['username']
+        password = request.form['password']
+        verify_password = request.form['verify_password']
+        email = request.form['email']
+
+        if not username:
+            username_error = "That's not a valid username."
+
+        if (len(username) <= 3) or (len(username) > 20) or (" " in username):
             username_error = "That's not a valid username"
             username = ''
 
-    if not password:
-        password_error = "That's not a valid password"
-
-    if len(password) <= 3 or len(password) > 20:
-        password_error = "That's not a valid password"
-        password = ''
-    else:
-        password = str(password)
-        if " " in password:
+        if (not password) or (len(password) <= 3) or (len(password) > 20) or (" " in password):
             password_error = "That's not a valid password"
-            password = ''
-    if not verify:
-        verify_error = "Passwords do not match."
-    else:
-        if str(password) != str(verify):
-            verify_error = "Passwords do not match."
-    
-    if len(email) <= 3 or len(email) > 20:
-        email_error = "That's not a valid email address."
-        email = ''
-    else:
-        email = str(email)
-        if "@" or "." not in email:
-            email_error = "That's not a vaild email address."
-        if " " in email:
+
+        if (not verify_password) or (password != verify_password):
+            verify_password_error = "Passwords do not match."
+
+        if (email != '') and (not re.match('^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$', email)):
             email_error = "That's not a valid email address."
             email = ''
-    if not (username_error) and not (password_error) and not (verify_error) and not (email_error):
-        username = str(username)
-        return render_template('hello_greeting.html', name=username)
+
+        if (not username_error) and (not password_error) and (not verify_password_error) and (not email_error):
+            return redirect("/welcome?username={0}".format(username))
         
-    else:
-        return render_template('signup_form.html',
-            username_error=username_error,
-            password_error=password_error,
-            verify_error=verify_error,
-            email_error=email_error,
-            email=email,
-            username=username)
+    return render_template('signup_form.html', title=title, username=username, email=email,
+                           username_error=username_error, password_error=password_error,
+                           verify_password_error=verify_password_error, email_error=email_error)
 
-#@app.route('/valid-signup')
-#def valid_signup():
-#    username = request.args.get('username')
-#    return '<h1>Welcome, {0}.</h1>'.format(username)
 
-app.run()
+@app.route("/welcome")
+def valid_login():
+    title = 'Welcome!'
+    username = request.args.get("username")
+    return render_template('hello_greeting.html', title=title, username=username)
+
+
+if __name__ == '__main__':
+    app.run()
